@@ -8,11 +8,15 @@ class WebPage(QWebEngineView):
     def __init__(self, parent=None):
         QWebEngineView.__init__(self)
         self.current_url = ''
+        self.current_file_path = ''
         self.load(QUrl("https://facebook.com"))
         self.loadFinished.connect(self._on_load_finished)
 
     def _on_load_finished(self):
         print("Url Loaded")
+
+    def _on_file_select(self):
+        print("New File path selected")
 
 class MainWindow(QMainWindow):
     def __init__(self, parent=None):
@@ -58,6 +62,8 @@ class MainWindow(QMainWindow):
         fileName, _ = QFileDialog.getOpenFileName(self,"QFileDialog.getOpenFileName()", "","All Files (*);;Python Files (*.py)", options=options)
         if fileName:
             print(fileName)
+            WebPage.current_file_path = fileName
+            WebPage._on_file_select(self)
 
     #Adds web widget to central widget
     def add_web_widet(self):
