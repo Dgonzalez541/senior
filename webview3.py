@@ -34,7 +34,9 @@ class MainWindow(QMainWindow):
         #File Menu Actions
         open_file_action = QAction("Open File", self)
         open_file_action.setShortcut('Ctrl+O')
+        open_file_action.triggered.connect(self.openFileNameDialog)
         self.file_menu.addAction(open_file_action)
+
 
         #Navigation Menu Actions
         next_page_action = QAction("Next Page",self)
@@ -49,6 +51,15 @@ class MainWindow(QMainWindow):
         choose_page_action.setShortcut('Ctrl+C')
         self.navigation_menu.addAction(choose_page_action)
 
+    #File dialog box
+    def openFileNameDialog(self):
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
+        fileName, _ = QFileDialog.getOpenFileName(self,"QFileDialog.getOpenFileName()", "","All Files (*);;Python Files (*.py)", options=options)
+        if fileName:
+            print(fileName)
+
+    #Adds web widget to central widget
     def add_web_widet(self):
         self.web_widget = WebPage(self)
         self.setCentralWidget(self.web_widget)
