@@ -27,8 +27,27 @@ class MainWindow(QMainWindow):
         self.main_menu = self.menuBar()
         self.main_menu_actions = {}
 
-        self.file_menu = self.main_menu.addMenu("Example File Menu")
-        self.file_menu.addAction(QAction("Testing Testing", self))
+        #Define Menus
+        self.file_menu = self.main_menu.addMenu("File")
+        self.navigation_menu = self.main_menu.addMenu("Navigation")
+
+        #File Menu Actions
+        open_file_action = QAction("Open File", self)
+        open_file_action.setShortcut('Ctrl+O')
+        self.file_menu.addAction(open_file_action)
+
+        #Navigation Menu Actions
+        next_page_action = QAction("Next Page",self)
+        next_page_action.setShortcut('Ctrl+N')
+        self.navigation_menu.addAction(next_page_action)
+
+        previous_page_action = QAction("Previous Page", self)
+        previous_page_action.setShortcut('Ctrl+P')
+        self.navigation_menu.addAction(previous_page_action)
+
+        choose_page_action = QAction("Choose Page", self)
+        choose_page_action.setShortcut('Ctrl+C')
+        self.navigation_menu.addAction(choose_page_action)
 
     def add_web_widet(self):
         self.web_widget = WebPage(self)
