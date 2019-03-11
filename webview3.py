@@ -21,6 +21,7 @@ class MainWindow(QMainWindow):
     def __init__(self, parent=None):
         # Initialize the Main Window
         super(MainWindow, self).__init__(parent)
+        self.fileName = ''
         self.create_menu()
         self.add_web_widet()
         self.show()
@@ -57,11 +58,42 @@ class MainWindow(QMainWindow):
     def openFileNameDialog(self):
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
-        fileName, _ = QFileDialog.getOpenFileName(self,"QFileDialog.getOpenFileName()", "","All Files (*);;Python Files (*.py)", options=options)
-        if fileName:
-            print(fileName)
-            self.web_widget.load(QUrl("https://google.com"))
+        self.fileName, _ = QFileDialog.getOpenFileName(self,"QFileDialog.getOpenFileName()", "","All Files (*);;Python Files (*.py)", options=options)
+        if self.fileName:
+            print(self.fileName)
+            #Handler function call
+            self.handler()
 
+
+    #File Handler Function, handles pdf, html, epub, docx, txt
+    #Determines what type file name is and calls appropriate function
+    def handler(self):
+        if self.fileName.endswith('.pdf'):
+            self.pdfHandler()
+        elif self.fileName.endswith('.html'):
+            self.htmlHandler()
+        elif self.fileName.endswith('.docx'):
+            self.docxHandler()
+        elif self.fileName.endswith('.epub'):
+            self.epubHandler()
+        else:
+            print("Invlaid filename")
+
+    #PDF Handler
+    def pdfHandler(self):
+        print("pdf handler called")
+
+    #html Handler
+    def htmlHandler(self):
+        print("html handler called")
+        self.web_widget.load(QUrl.fromLocalFile(self.fileName))
+
+    #Docx Handler
+    def docxHandler(self):
+        print("docx handler called")
+    #Epub Handler
+    def epubHandler(self):
+        print("epub handler called")
 
     #Adds web widget to central widget
     def add_web_widet(self):
