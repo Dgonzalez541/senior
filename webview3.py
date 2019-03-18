@@ -1,8 +1,11 @@
 import os
 import sys
+import ebooklib
+from ebooklib import epub
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtWebEngineWidgets import *
+from PyQt5.QtGui import QIcon
 
 class WebPage(QWebEngineView):
     def __init__(self, parent=None):
@@ -54,6 +57,15 @@ class MainWindow(QMainWindow):
         choose_page_action.setShortcut('Ctrl+C')
         self.navigation_menu.addAction(choose_page_action)
 
+        #Toolbar
+        exitAct = QAction(QIcon('exit24.png'), 'Exit', self)
+        exitAct.setShortcut('Ctrl+Q')
+        exitAct.triggered.connect(qApp.quit)
+
+        self.toolbar = self.addToolBar('Exit')
+        self.toolbar.addAction(exitAct)
+
+
     #File dialog box
     def openFileNameDialog(self):
         options = QFileDialog.Options()
@@ -91,9 +103,15 @@ class MainWindow(QMainWindow):
     #Docx Handler
     def docxHandler(self):
         print("docx handler called")
+
     #Epub Handler
     def epubHandler(self):
         print("epub handler called")
+        book = epub.read_epub(self.fileName)
+        book_items = []
+        for item in book.get_items_of_type(ebooklib.ITEM_DOCUMENT):
+                book_items.append(ebooklib.epub.EpubHtml.get_id(item))
+        self.web_widget.load(QUrl.fromLocalFile(ebooklib.epub.EpubHtml.get_content(ui=item[0])))
 
     #Adds web widget to central widget
     def add_web_widet(self):
