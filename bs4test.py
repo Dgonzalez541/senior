@@ -21,5 +21,5 @@ for sentence in sentence_list:
     sentence = AudioSegment.from_mp3("sentence.mp3")
     paragraph += sentence
 
-
+paragraph.export("paragraph.mp3", format="mp3")
 os.system("mpg321 paragraph.mp3")
