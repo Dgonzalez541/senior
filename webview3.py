@@ -25,6 +25,8 @@ class MainWindow(QMainWindow):
         # Initialize the Main Window
         super(MainWindow, self).__init__(parent)
         self.fileName = ''
+        self.chapterList = []
+        self.currentSection = 0
         self.create_menu()
         self.add_web_widet()
         self.show()
@@ -47,10 +49,12 @@ class MainWindow(QMainWindow):
         #Navigation Menu Actions
         next_page_action = QAction("Next Page",self)
         next_page_action.setShortcut('Ctrl+N')
+        next_page_action.triggered.connect(self.pageTurnNext)
         self.navigation_menu.addAction(next_page_action)
 
         previous_page_action = QAction("Previous Page", self)
         previous_page_action.setShortcut('Ctrl+P')
+        previous_page_action.triggered.connect(self.pageTurnPrev)
         self.navigation_menu.addAction(previous_page_action)
 
         choose_page_action = QAction("Choose Page", self)
@@ -64,6 +68,7 @@ class MainWindow(QMainWindow):
 
         self.toolbar = self.addToolBar('Exit')
         self.toolbar.addAction(exitAct)
+
 
 
     #File dialog box
@@ -108,15 +113,37 @@ class MainWindow(QMainWindow):
     def epubHandler(self):
         print("epub handler called")
         book = epub.read_epub(self.fileName)
-        book_items = []
-        for item in book.get_items_of_type(ebooklib.ITEM_DOCUMENT):
-                book_items.append(ebooklib.epub.EpubHtml.get_id(item))
-        self.web_widget.load(QUrl.fromLocalFile(ebooklib.epub.EpubHtml.get_content(ui=item[0])))
+
+        for chapter in book.get_items_of_type(ebooklib.ITEM_DOCUMENT):
+            chapter = str(chapter)
+            first, second, third = chapter.split(':')
+            third = third[:-1]
+            file = self.fileName
+            file = file[:-5]
+            href = file + '/' + third
+            self.chapterList.append(href)
+
+        print(self.chapterList[0])
+        self.web_widget.load(QUrl.fromLocalFile(self.chapterList[0]))
 
     #Adds web widget to central widget
     def add_web_widet(self):
         self.web_widget = WebPage(self)
         self.setCentralWidget(self.web_widget)
+
+    def pageTurnNext(self):
+        print("pageTurnNext called")
+        #print("CurrentP Page: " + self.currentSection)
+        if((self.currentSection + 1) <= len(self.chapterList)):
+            self.web_widget.load(QUrl.fromLocalFile(self.chapterList[self.currentSection + 1]))
+            self.currentSection = self.currentSection + 1
+
+    def pageTurnPrev(self):
+        print("pageTurnPrev called")
+        #print("CurrentP Page: " + self.currentSection)
+        if((self.currentSection - 1) >= 0):
+            self.web_widget.load(QUrl.fromLocalFile(self.chapterList[self.currentSection - 1]))
+            self.currentSection = self.currentSection - 1
 
 
 if __name__ == "__main__":
