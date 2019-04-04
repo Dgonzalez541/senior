@@ -132,7 +132,7 @@ class MainWindow(QMainWindow):
 
     #Epub Handler
     def epubHandler(self):
-
+        self.clearData()
         book = self.fileName
         zip = 'temp.zip'
         directory = 'tempDir'
@@ -151,12 +151,11 @@ class MainWindow(QMainWindow):
             chapter = str(chapter)
             first, second, third = chapter.split(':')
             third = third[:-1]
-
+            print("THIRD: " + third)
             if (third.endswith('.htm') or third.endswith('.xml') or third.endswith('.xhtml')):
                 name, extension = third.split('.')
                 src = os.getcwd() + "/" + directory + "/" +  third
                 dest = os.getcwd() + "/" + directory + "/" + name + ".html"
-                print("Adjusted dest" + dest)
                 os.rename(src,dest)
                 self.chapterList.append(dest)
             else:
@@ -168,6 +167,15 @@ class MainWindow(QMainWindow):
         self.web_widget.load(QUrl.fromLocalFile(self.chapterList[0]))
         self.combo.addItems(self.chapterList)
 
+    def clearData(self):
+        self.chapterList = []
+        self.combo.clear()
+        self.currentSection = 0
+        print(os.getcwd() + '/temp.zip')
+        if(os.path.exists(os.getcwd() + '/temp.zip')):
+            os.rmdir(os.getcwd() + '/temp.zip')
+            if(os.path.exists(os.getcwd() + '/tempDir')):
+                os.rmdir(os.getcwd() + '/tempDir')
 
     #Adds web widget to central widget
     def add_web_widet(self):
