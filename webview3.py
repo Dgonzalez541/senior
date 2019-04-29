@@ -95,17 +95,23 @@ class MainWindow(QMainWindow):
             except:
                 print("Audio not deleted")
                 pass
-            self.currentText = ''
+            self.currentText = []
             self.getChapterText(self.chapterList[self.currentSection])
+            print("Current Index: " + str(self.currentTextIndex))
             self.currentText = self.chapterText[self.currentTextIndex]
-            print(self.currentText)
-            #self.createMP3()
-            #os.system("mpg321 currentParagraphAudio.mp3")
 
+            if(self.currentText != ''):
+                self.createMP3()
+                os.system("mpg321 currentParagraphAudio.mp3")
+            else:
+                print("empty text")
         if e.key() == Qt.Key_Right:
-            if((self.currentTextIndex + 1) <= len(self.chapterText)):
+            if((self.currentTextIndex + 1) < len(self.chapterText)):
                 self.currentTextIndex = self.currentTextIndex + 1
 
+        if e.key() == Qt.Key_Left:
+            if((self.currentTextIndex - 1) >= 0):
+                self.currentTextIndex = self.currentTextIndex - 1
 
 
     def createToolBar(self):
@@ -161,18 +167,9 @@ class MainWindow(QMainWindow):
         else:
             print("Invlaid filename")
 
-    #PDF Handler
-    def pdfHandler(self):
-        print("pdf handler called")
-
     #html Handler
     def htmlHandler(self):
-        print("html handler called")
         self.web_widget.load(QUrl.fromLocalFile(self.fileName))
-
-    #Docx Handler
-    def docxHandler(self):
-        print("docx handler called")
 
     #Epub Handler
     def epubHandler(self):
@@ -211,9 +208,21 @@ class MainWindow(QMainWindow):
         self.chapterText = []
         with open(file) as fp:
             soup = BeautifulSoup(fp,"html.parser")
-            fp.close()
-        self.chapterText = soup.find_all() #get all html elements in currely selected chapter
+        newArray = []
+        headTag = soup.find_all("head")
+        for head in headTag:
+            titles = head.find_all("title")
+            for tag in titles:
+                self.chapterText.append(tag.text)
 
+        divTag = soup.find_all("div")
+        for tag in divTag:
+            tdTags = tag.find_all("p")
+            for tag in tdTags:
+                self.chapterText.append(tag.text)
+
+        print(len(self.chapterText))
+        fp.close()
 
 
     def createMP3(self):
@@ -257,6 +266,7 @@ class MainWindow(QMainWindow):
 
     #Navigation Functions
     def pageTurnNext(self):
+        self.chapterText
         print("pageTurnNext called")
         #print("CurrentP Page: " + self.currentSection)
         if((self.currentSection + 1) <= len(self.chapterList)):
@@ -266,16 +276,14 @@ class MainWindow(QMainWindow):
             self.currrentTextIndex = 0
 
 
-
-
-
-
     def pageTurnPrev(self):
         print("pageTurnPrev called")
         #print("CurrentP Page: " + self.currentSection)
         if((self.currentSection - 1) >= 0):
-            self.web_widget.load(QUrl.fromLocalFile(self.chapterList[self.currentSection - 1]))
             self.currentSection = self.currentSection - 1
+            self.web_widget.load(QUrl.fromLocalFile(self.chapterList[self.currentSection]))
+            self.getChapterText(self.chapterList[self.currentSection])
+            self.currrentTextIndex = 0
 
     def onActivated(self):
         self.web_widget.load(QUrl.fromLocalFile(self.chapterList[self.combo.currentIndex()]))
