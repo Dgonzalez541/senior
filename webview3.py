@@ -44,6 +44,13 @@ class MainWindow(QMainWindow):
         self.currentTextIndex = 0
         self.currentParagraphAudio = AudioSegment.empty() #create audio segment
 
+        try:
+            os.remove( os.getcwd() + '/currentParagraphAudio.mp3')
+            print("Audio Deleted")
+        except:
+            print("Audio not deleted")
+            pass
+
         self.create_menu()
         self.createToolBar()
         self.add_web_widet()
@@ -82,15 +89,23 @@ class MainWindow(QMainWindow):
     def keyPressEvent(self, e):
 
         if e.key() == Qt.Key_Return:
+            try:
+                os.remove( os.getcwd() + '/currentParagraphAudio.mp3')
+                print("Audio Deleted")
+            except:
+                print("Audio not deleted")
+                pass
+            self.currentText = ''
             self.getChapterText(self.chapterList[self.currentSection])
-            self.getCurrentText(self.currentTextIndex)
-            self.createMP3()
-            os.system("mpg321 currentParagraphAudio.mp3")
+            self.currentText = self.chapterText[self.currentTextIndex]
+            print(self.currentText)
+            #self.createMP3()
+            #os.system("mpg321 currentParagraphAudio.mp3")
 
         if e.key() == Qt.Key_Right:
             if((self.currentTextIndex + 1) <= len(self.chapterText)):
                 self.currentTextIndex = self.currentTextIndex + 1
-                self.getCurrentText(self.currentTextIndex)
+
 
 
     def createToolBar(self):
@@ -192,18 +207,17 @@ class MainWindow(QMainWindow):
         self.currentTextIndex = 0;
 
 
-    def getCurrentText(self,i):
-        self.currentText = self.chapterText[i].get_text()
-
     def getChapterText(self, file):
         self.chapterText = []
         with open(file) as fp:
             soup = BeautifulSoup(fp,"html.parser")
+            fp.close()
         self.chapterText = soup.find_all() #get all html elements in currely selected chapter
-        self.currentText = self.chapterText[self.currentTextIndex].get_text() #gets text from first element in chapter text
+
 
 
     def createMP3(self):
+        self.currentParagraphAudio = AudioSegment.empty() #create audio segment
         sentence_list = sent_tokenize(self.currentText)
         for sentence in sentence_list:
                 lang = detect(sentence)
@@ -216,11 +230,12 @@ class MainWindow(QMainWindow):
 
     #Resets data for file changing
     def clearData(self):
-        self.currentText = []
+        self.currentText = ''
         self.chapterText = []
         self.chapterList = []
         self.combo.clear()
         self.currentSection = 0
+        self.currentParagraphAudio = AudioSegment.empty()
         try:
             #print(os.getcwd() + '/temp.zip')
             if(os.path.exists(os.getcwd() + '/temp.zip')):
@@ -228,6 +243,13 @@ class MainWindow(QMainWindow):
                 if(os.path.exists(os.getcwd() + '/tempDir')):
                     os.rmdir(os.getcwd() + '/tempDir')
         except:
+            pass
+
+        try:
+            os.remove( os.getcwd() + '/currentParagraphAudio.mp3')
+            print("Audio Deleted")
+        except:
+            print("Audio not deleted")
             pass
 
     def toggleAudio(self):
@@ -241,10 +263,8 @@ class MainWindow(QMainWindow):
             self.currentSection = self.currentSection + 1
             self.web_widget.load(QUrl.fromLocalFile(self.chapterList[self.currentSection]))
             self.getChapterText(self.chapterList[self.currentSection])
-            print(self.currentText)
             self.currrentTextIndex = 0
-            self.getCurrentText(self.currentTextIndex)
-            os.remove("currentParagraphAudio.mp3")
+
 
 
 
