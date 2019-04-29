@@ -40,7 +40,7 @@ class MainWindow(QMainWindow):
         self.currentSection = 0 #Current section of Epub
         self.audioToggle = True
         self.chapterText = [] # list of html elements in current chapter
-        self.currentText = [] #currently selected html element
+        self.currentText = '' #currently selected html element
         self.currentTextIndex = 0
         self.currentParagraphAudio = AudioSegment.empty() #create audio segment
 
@@ -82,13 +82,16 @@ class MainWindow(QMainWindow):
     def keyPressEvent(self, e):
 
         if e.key() == Qt.Key_Return:
+            self.getChapterText(self.chapterList[self.currentSection])
+            self.getCurrentText(self.currentTextIndex)
+            self.createMP3()
             os.system("mpg321 currentParagraphAudio.mp3")
 
         if e.key() == Qt.Key_Right:
             if((self.currentTextIndex + 1) <= len(self.chapterText)):
                 self.currentTextIndex = self.currentTextIndex + 1
                 self.getCurrentText(self.currentTextIndex)
-                self.createMP3()
+
 
     def createToolBar(self):
 
@@ -187,8 +190,7 @@ class MainWindow(QMainWindow):
         self.combo.addItems(self.chapterList)
 
         self.currentTextIndex = 0;
-        self.getChapterText(self.chapterList[self.currentSection])
-        self.getCurrentText(self.currentTextIndex)
+
 
     def getCurrentText(self,i):
         self.currentText = self.chapterText[i].get_text()
@@ -198,7 +200,7 @@ class MainWindow(QMainWindow):
         with open(file) as fp:
             soup = BeautifulSoup(fp,"html.parser")
         self.chapterText = soup.find_all() #get all html elements in currely selected chapter
-        self.currentText = self.chapterText[0].get_text() #gets text from first element in chapter text
+        self.currentText = self.chapterText[self.currentTextIndex].get_text() #gets text from first element in chapter text
 
 
     def createMP3(self):
@@ -239,11 +241,11 @@ class MainWindow(QMainWindow):
             self.currentSection = self.currentSection + 1
             self.web_widget.load(QUrl.fromLocalFile(self.chapterList[self.currentSection]))
             self.getChapterText(self.chapterList[self.currentSection])
-            self.currrentExtIndex = 0
+            print(self.currentText)
+            self.currrentTextIndex = 0
             self.getCurrentText(self.currentTextIndex)
             os.remove("currentParagraphAudio.mp3")
-            self.createMP3()
-            os.system("mpg321 currentParagraphAudio.mp3")
+
 
 
 
