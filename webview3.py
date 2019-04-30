@@ -17,38 +17,28 @@ from nltk.tokenize import sent_tokenize
 from gtts import gTTS
 from pydub import AudioSegment
 
-
 class WebPage(QWebEngineView):
     def __init__(self, parent=None):
         QWebEngineView.__init__(self)
         self.current_url = ''
-
-
-    def _on_load_finished(self):
-        print("Url Loaded")
-
-    def _on_file_select(self):
-        self.load(QUrl("https://google.com"))
 
 class MainWindow(QMainWindow):
     def __init__(self, parent=None):
         # Initialize the Main Window
         super(MainWindow, self).__init__(parent)
 
-        self.fileName = ''
+        self.fileName = '' #Current file
         self.chapterList = [] #List of chapters in Epub
         self.currentSection = 0 #Current section of Epub
-        self.audioToggle = True
-        self.chapterText = [] # list of html elements in current chapter
+        self.chapterText = [] # List of html elements in current chapter
         self.currentText = '' #currently selected html element
-        self.currentTextIndex = 0
-        self.currentParagraphAudio = AudioSegment.empty() #create audio segment
+        self.currentTextIndex = 0 #Current index in text
+        self.currentParagraphAudio = AudioSegment.empty() #Empty audio segment
 
+        #Delete audio
         try:
             os.remove( os.getcwd() + '/currentParagraphAudio.mp3')
-            print("Audio Deleted")
         except:
-            print("Audio not deleted")
             pass
 
         self.create_menu()
@@ -57,7 +47,7 @@ class MainWindow(QMainWindow):
         self.show()
 
     def create_menu(self):
-        ''' Creates the Main Menu '''
+        #Creates the Main Menu
         self.main_menu = self.menuBar()
         self.main_menu_actions = {}
 
@@ -86,14 +76,13 @@ class MainWindow(QMainWindow):
         choose_page_action.setShortcut('Ctrl+C')
         self.navigation_menu.addAction(choose_page_action)
 
+    #Keyboard event handler
     def keyPressEvent(self, e):
-
+        #Audio play controls
         if e.key() == Qt.Key_Return:
-            try:
+            try: #Delete previous audio
                 os.remove( os.getcwd() + '/currentParagraphAudio.mp3')
-                print("Audio Deleted")
             except:
-                print("Audio not deleted")
                 pass
             self.currentText = []
             self.getChapterText(self.chapterList[self.currentSection])
@@ -105,6 +94,8 @@ class MainWindow(QMainWindow):
                 os.system("mpg321 currentParagraphAudio.mp3")
             else:
                 print("empty text")
+
+        #Arrow key controls
         if e.key() == Qt.Key_Right:
             if((self.currentTextIndex + 1) < len(self.chapterText)):
                 self.currentTextIndex = self.currentTextIndex + 1
@@ -124,19 +115,12 @@ class MainWindow(QMainWindow):
         self.toolbar.addAction(exitAct)
 
         prevPageAct = QAction(QIcon.fromTheme('go-previous'),'Prev',self)
-        #prevPageAct.setShortcut('Ctrl+P')
         prevPageAct.triggered.connect(self.pageTurnPrev)
         self.toolbar.addAction(prevPageAct)
 
         nextPageAct = QAction(QIcon.fromTheme('go-next'),'Next',self)
-        #nextPageAct.setShortcut('Ctrl+N')
         nextPageAct.triggered.connect(self.pageTurnNext)
         self.toolbar.addAction(nextPageAct)
-
-        toggleAudioAct = QAction(QIcon.fromTheme('audio-volume-high'),'Toggle Audio', self)
-        toggleAudioAct.setShortcut('Ctrl+T')
-        toggleAudioAct.triggered.connect(self.toggleAudio)
-        self.toolbar.addAction(toggleAudioAct)
 
         #Combobox for toolbar
         self.combo=QComboBox()
@@ -170,23 +154,25 @@ class MainWindow(QMainWindow):
     #html Handler
     def htmlHandler(self):
         self.web_widget.load(QUrl.fromLocalFile(self.fileName))
+        self.currentTextIndex = 0;
 
     #Epub Handler
     def epubHandler(self):
         self.clearData()
 
+        #copy and rename epub to zip for extraction
         shutil.copyfile(self.fileName, 'temp.zip')
         zip_ref = zipfile.ZipFile('temp.zip', 'r')
         zip_ref.extractall('tempDir')
         zip_ref.close()
 
         bookRead = epub.read_epub(self.fileName)
-        for chapter in bookRead.get_items_of_type(ebooklib.ITEM_DOCUMENT):
-            #parse file path to content file from item object inside OBES folder
+        for chapter in bookRead.get_items_of_type(ebooklib.ITEM_DOCUMENT):#Parse document files from epub file
+            #Get usable file location for document file by parsing returned ebooklib object
             chapter = str(chapter)
             first, second, third = chapter.split(':')
             third = third[:-1]
-            if (third.endswith('.htm') or third.endswith('.xml') or third.endswith('.xhtml')):
+            if (third.endswith('.htm') or third.endswith('.xml') or third.endswith('.xhtml')): #Convert to html
                 name, extension = third.split('.')
                 src = os.getcwd() + "/" + "tempDir" + "/" +  third
                 dest = os.getcwd() + "/" + "tempDir" + "/" + name + ".html"
@@ -198,39 +184,28 @@ class MainWindow(QMainWindow):
                 href = file + '/' + third
                 self.chapterList.append(href)
 
-        self.web_widget.load(QUrl.fromLocalFile(self.chapterList[0]))
-        self.combo.addItems(self.chapterList)
+        self.web_widget.load(QUrl.fromLocalFile(self.chapterList[0])) #Load first page
+        self.combo.addItems(self.chapterList) #Set navigation dropdown options
+        self.currentTextIndex = 0; #initialize current text section
 
-        self.currentTextIndex = 0;
-
-
+    #Gets current chapter text
     def getChapterText(self, file):
         self.chapterText = []
         with open(file) as fp:
             soup = BeautifulSoup(fp,"html.parser")
         newArray = []
-        headTag = soup.find_all("head")
-        for head in headTag:
-            titles = head.find_all("title")
-            for tag in titles:
-                self.chapterText.append(tag.text)
-
-        divTag = soup.find_all("div")
-        for tag in divTag:
-            tdTags = tag.find_all("p")
-            for tag in tdTags:
-                self.chapterText.append(tag.text)
-
+        raw =soup.findAll(['title','p','td','em','h2','span'])#get raw html tags in list of common tags that contain text
+        for i in range(len(raw)):
+            self.chapterText.append(raw[i].text)
         print(len(self.chapterText))
         fp.close()
 
-
+    #Create mp3 file
     def createMP3(self):
         self.currentParagraphAudio = AudioSegment.empty() #create audio segment
         sentence_list = sent_tokenize(self.currentText)
-        for sentence in sentence_list:
+        for sentence in sentence_list: #Language detection and conversion to mp3
                 lang = detect(sentence)
-                print(lang)
                 myobj = gTTS(text=sentence, lang=lang, slow=False)
                 myobj.save("sentence.mp3")
                 sentence = AudioSegment.from_mp3("sentence.mp3")
@@ -245,8 +220,8 @@ class MainWindow(QMainWindow):
         self.combo.clear()
         self.currentSection = 0
         self.currentParagraphAudio = AudioSegment.empty()
+        #Delete temp files
         try:
-            #print(os.getcwd() + '/temp.zip')
             if(os.path.exists(os.getcwd() + '/temp.zip')):
                 os.rmdir(os.getcwd() + '/temp.zip')
                 if(os.path.exists(os.getcwd() + '/tempDir')):
@@ -254,37 +229,28 @@ class MainWindow(QMainWindow):
         except:
             pass
 
+        #Delete audio
         try:
             os.remove( os.getcwd() + '/currentParagraphAudio.mp3')
-            print("Audio Deleted")
         except:
-            print("Audio not deleted")
             pass
-
-    def toggleAudio(self):
-        self.audioToggle = not self.audioToggle
 
     #Navigation Functions
     def pageTurnNext(self):
-        self.chapterText
-        print("pageTurnNext called")
-        #print("CurrentP Page: " + self.currentSection)
         if((self.currentSection + 1) <= len(self.chapterList)):
             self.currentSection = self.currentSection + 1
             self.web_widget.load(QUrl.fromLocalFile(self.chapterList[self.currentSection]))
             self.getChapterText(self.chapterList[self.currentSection])
             self.currrentTextIndex = 0
 
-
     def pageTurnPrev(self):
-        print("pageTurnPrev called")
-        #print("CurrentP Page: " + self.currentSection)
         if((self.currentSection - 1) >= 0):
             self.currentSection = self.currentSection - 1
             self.web_widget.load(QUrl.fromLocalFile(self.chapterList[self.currentSection]))
             self.getChapterText(self.chapterList[self.currentSection])
             self.currrentTextIndex = 0
 
+    #On activate function that sets combobox index
     def onActivated(self):
         self.web_widget.load(QUrl.fromLocalFile(self.chapterList[self.combo.currentIndex()]))
 
